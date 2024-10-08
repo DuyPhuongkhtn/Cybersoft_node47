@@ -1,11 +1,15 @@
 import express from 'express';
 import connect from './db.js';
+import rootRoutes from './src/routes/rootRoutes.js';
 
 // tạo object tổng của express
 const app = express();
 
 // thêm middlware để convert string về json với API POST và PUT
 app.use(express.json());
+
+// import rootRoutes vào index.js
+app.use(rootRoutes);
 
 // viết API hello world
 app.get("/hello-world", (req, res) => {
@@ -32,17 +36,17 @@ app.get("/get-user/:id/:hoTen", (req, res)=>{
 // lấy body từ API POST (create) và PUT (update)
 
 '{ "id": 1, "hoTen": "Phuong" }'
-app.post("/create-user", (req, res) => {
-    let body = req.body;
-    res.send(body);
-})
+// app.post("/create-user", (req, res) => {
+//     let body = req.body;
+//     res.send(body);
+// })
 
-app.get("/get-user-db", async (req, res) => {
-    const [data] = await connect.query(`
-        SELECT * from users
-    `)
-    res.send(data);
-})
+// app.get("/get-user-db", async (req, res) => {
+//     const [data] = await connect.query(`
+//         SELECT * from users
+//     `)
+//     res.send(data);
+// })
 
 app.post("/create-user-db", async (req, res) => {
     const query = `
@@ -59,3 +63,5 @@ app.post("/create-user-db", async (req, res) => {
 app.listen(8080, () => {
     console.log("BE starting with port 8080");
 });
+
+//npx sequelize-auto -h localhost -d node47_youtube -u root -x 123456 -p 3307 --dialect mysql -o src/models -l esm
