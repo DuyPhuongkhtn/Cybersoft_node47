@@ -1,9 +1,13 @@
 import express from 'express';
 import connect from './db.js';
 import rootRoutes from './src/routes/rootRoutes.js';
+import cors from 'cors';
 
 // tạo object tổng của express
 const app = express();
+
+// thêm middleware cors để nhận request từ FE hoặc bên khác
+app.use(cors());
 
 // thêm middlware để convert string về json với API POST và PUT
 app.use(express.json());
