@@ -52,16 +52,16 @@ app.get("/get-user/:id/:hoTen", (req, res)=>{
 //     res.send(data);
 // })
 
-app.post("/create-user-db", async (req, res) => {
-    const query = `
-        INSERT INTO users(full_name, email, pass_word) VALUES
-        (?, ?, ?)
-    `;
-    let body = req.body;
-    let {full_name, email, pass_word} = body;
-    const [data] = await connect.execute(query, [full_name, email, pass_word])
-    return res.send(data);
-})
+// app.post("/create-user-db", async (req, res) => {
+//     const query = `
+//         INSERT INTO users(full_name, email, pass_word) VALUES
+//         (?, ?, ?)
+//     `;
+//     let body = req.body;
+//     let {full_name, email, pass_word} = body;
+//     const [data] = await connect.execute(query, [full_name, email, pass_word])
+//     return res.send(data);
+// })
 
 // define port cho BE
 app.listen(8080, () => {

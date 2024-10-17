@@ -9,6 +9,7 @@ const rootRoutes = express.Router();
 // import userRoutes vào rootRoutes
 rootRoutes.use("/user", userRoutes);
 
+
 // import videoRoutes vào rootRoutes
 rootRoutes.use("/video", videoRoutes);
 
