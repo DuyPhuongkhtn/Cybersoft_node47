@@ -9,7 +9,7 @@ videoRoutes.get("/get-videos", getVideos);
 
 
 // define api get type video
-videoRoutes.get("/get-types", getTypes);
+videoRoutes.get("/get-types", middlewareToken, getTypes); // apply authentication
 
 // define api get list video by video type (type_id)
 videoRoutes.get("/get-videos/:typeId", getVideosTypeId);

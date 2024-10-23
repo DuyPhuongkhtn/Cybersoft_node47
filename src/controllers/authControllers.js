@@ -165,6 +165,7 @@ const loginFacebook = async (req, res) => {
 const forgotPassword = async (req, res) => {
     try {
         let { email } = req.body;
+        console.log("get email: ", email)
 
         // kiểm tra email có tồn tại trong db hay không
         let checkUser = await model.users.findOne({
@@ -208,9 +209,52 @@ const forgotPassword = async (req, res) => {
     }
 }
 
+const changePassword = async (req, res) => {
+    try {
+        let {email, code, newPass} = req.body;
+
+        // check email có tồn tại trong db hay không
+        let checkEmail = await model.users.findOne({
+            where: {email}
+        });
+
+        if (!checkEmail) {
+            return res.status(400).json({message: "Email is wrong"});
+        }
+
+        if(!code) {
+            return res.status(400).json({message: "Code is wrong"});
+        }
+
+        let checkCode = await model.code.findOne({
+            where: {code}
+        })
+
+        if (!checkCode) {
+            return res.status(400).json({message: "Code is wrong"});
+        }
+
+        let hashNewPass = bcrypt.hashSync(newPass, 10);
+        // c1
+        checkEmail.pass_word = hashNewPass;
+        checkEmail.save();
+
+        // c2: dùng function update
+
+        // hủy code sau khi đã change password
+        await model.code.destroy({
+            where: {code}
+        })
+        return res.status(200).json({message: "Change password successfully"});
+    } catch (error) {
+        return res.status(500).json({message: "error API change password"});
+    }
+}
+
 export {
     signUp,
     login,
     loginFacebook,
-    forgotPassword
+    forgotPassword,
+    changePassword,
 }
