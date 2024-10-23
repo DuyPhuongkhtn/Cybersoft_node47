@@ -4,7 +4,7 @@ import { Op } from 'sequelize'; // Operator
 import bcrypt from 'bcrypt'; // lib mã hóa password
 import transporter from "../config/transporter.js";
 import jwt from 'jsonwebtoken'; // lib tạo token
-import { createToken } from "../config/jwt.js";
+import { createRefToken, createToken } from "../config/jwt.js";
 import crypto from 'crypto'; // lib tạo code forgot password
 import code from "../models/code.js";
 
@@ -93,6 +93,22 @@ const login = async (req, res) => {
         // tạo access token bằng khóa đối xứng
         let accessToken = createToken(payload);
 
+        // tạo refresh token
+        let refreshToken = createRefToken(payload);
+
+        // lưu refresh token vào table users
+        await model.users.update({
+            refresh_token: refreshToken
+        }, { where: {user_id: checkUser.user_id}})
+
+        // gắn refresh token cho cookie của response
+        res.cookie('refreshToken', refreshToken, {
+            httpOnly: true,
+            secure: false, // dùng riêng cho localhost
+            sameSite: 'Lax', // đảm bảo cookie được gửi trong nhiều domain
+            maxAge: 7 * 24 * 60 * 60 * 1000 // thời gian tồn tại là 7 ngày
+        })
+
         return res.status(200).json({ message: "Login successfully", token: accessToken });
         // access token + refresh token
     } catch (error) {
@@ -165,6 +181,7 @@ const loginFacebook = async (req, res) => {
 const forgotPassword = async (req, res) => {
     try {
         let { email } = req.body;
+        console.log("get email: ", email)
 
         // kiểm tra email có tồn tại trong db hay không
         let checkUser = await model.users.findOne({
@@ -208,9 +225,81 @@ const forgotPassword = async (req, res) => {
     }
 }
 
+const changePassword = async (req, res) => {
+    try {
+        let {email, code, newPass} = req.body;
+
+        // check email có tồn tại trong db hay không
+        let checkEmail = await model.users.findOne({
+            where: {email}
+        });
+
+        if (!checkEmail) {
+            return res.status(400).json({message: "Email is wrong"});
+        }
+
+        if(!code) {
+            return res.status(400).json({message: "Code is wrong"});
+        }
+
+        let checkCode = await model.code.findOne({
+            where: {code}
+        })
+
+        if (!checkCode) {
+            return res.status(400).json({message: "Code is wrong"});
+        }
+
+        let hashNewPass = bcrypt.hashSync(newPass, 10);
+        // c1
+        checkEmail.pass_word = hashNewPass;
+        checkEmail.save();
+
+        // c2: dùng function update
+
+        // hủy code sau khi đã change password
+        await model.code.destroy({
+            where: {code}
+        })
+        return res.status(200).json({message: "Change password successfully"});
+    } catch (error) {
+        return res.status(500).json({message: "error API change password"});
+    }
+}
+
+const extendToken = async (req, res) => {
+    try {
+        // lấy refresh token từ cookie của req
+        let refreshToken = req.cookies.refreshToken;
+        console.log("refreshToken: ", refreshToken, !refreshToken)
+
+        if (!refreshToken) {
+            console.log("nothing")
+            return res.status(401).json({message: "401"})
+        }
+
+        // check refresh token trong db
+        let userRefToken = await model.users.findOne({
+            where: {refresh_token: refreshToken}
+        });
+
+        if (!userRefToken || userRefToken == null) {
+            return res.status(401).json({message: "401"})
+        }
+
+        //  create new access token
+        let newAccessToken = createToken({userId: userRefToken.user_id});
+        return res.status(200).json({message: "Success", token: newAccessToken});
+    } catch (error) {
+        return res.status(500).json({message: "Error API extend token"});
+    }
+}
+
 export {
     signUp,
     login,
     loginFacebook,
-    forgotPassword
+    forgotPassword,
+    changePassword,
+    extendToken
 }
