@@ -16,7 +16,7 @@ const getVideos = async (req, res) => {
         });
         // VD: page = 2, limit: 4
         // bỏ qua 4 item đầu tiên và lấy 4 item tiếp theo
-        return res.status(200).json(data);
+        return res.status(201).json(data);
     } catch (error) {
         console.log(error);
         return res.status(500).json({message: "error for api get list videos"});
