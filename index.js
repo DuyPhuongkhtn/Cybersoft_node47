@@ -22,6 +22,17 @@ app.use(express.json());
 // import rootRoutes vào index.js
 app.use(rootRoutes);
 
+// define middleware để handle lỗi
+// define cho express hiểu khi có error xảy ra
+// thì express nó sẽ tìm tới middleware này
+//  lưu ý: phải truyền 4 params để express hiểu
+// đó là middleware handle lỗi
+app.use((err, req, res, next) => {
+    res.status(err.status || 500).json({
+        message: err.message || "Internal server"
+    })
+});
+
 // viết API hello world
 app.get("/hello-world", (req, res) => {
     res.send("hello world");
@@ -76,3 +87,8 @@ app.listen(8080, () => {
 });
 
 //npx sequelize-auto -h localhost -d node47_youtube -u root -x 123456 -p 3307 --dialect mysql -o src/models -l esm
+
+// B1: npx prisma init
+// B1.1: sửa lại info connection string
+// B2: npx prisma db pull (db first)
+// b3: npx prisma generate (khởi tạo client) <==> connect trong sequelize

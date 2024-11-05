@@ -2,7 +2,7 @@ import { expect } from 'chai';
 import Sinon from 'sinon';
 import initModels from '../../models/init-models.js';
 import sequelize from '../../models/connect.js';
-import { getVideos } from '../../controllers/videoControllers.js';
+import { getTypes, getVideos } from '../../controllers/videoControllers.js';
 import { describe, it } from 'mocha';
 
 const model = initModels(sequelize);
@@ -91,5 +91,42 @@ describe('getVideos', () => { // define bộ test case
         // expect kết quả
         expect(res.status.calledOnceWith(500)).to.be.true;
         expect(res.json.calledOnceWith({message: "error for api get list videos"})).to.be.true
+    })
+})
+
+describe("test case controller getTypes", () => {
+    let req, res, findAllStub;
+    beforeEach(() => {
+        req = {}
+        res = {
+            status: Sinon.stub().returnsThis(),
+            json: Sinon.stub()
+        }
+        findAllStub = Sinon.stub(model.video_type, "findAll");
+    })
+
+    afterEach(() => {
+        findAllStub.restore();
+    })
+
+    // case 1: get list type video successfully
+    it("Get list type videos successfully", async () => {
+        const mockData = [
+            {
+                "type_id": 1,
+                "type_name": "New",
+                "icon": "fa-solid fa-house"
+            },
+            {
+                "type_id": 2,
+                "type_name": "Coding",
+                "icon": "fa-solid fa-code"
+            }
+        ];
+        findAllStub.resolves(mockData);
+        await getTypes(req, res);
+
+        // expect kết quả mong muốn
+        expect(res.json.calledOnceWith(mockData)).to.be.true;
     })
 })

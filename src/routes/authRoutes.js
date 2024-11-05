@@ -1,5 +1,6 @@
 import express from 'express';
 import { signUp, login, loginFacebook, forgotPassword, changePassword, extendToken } from '../controllers/authControllers.js';
+import { tryCatch } from '../config/tryCatch.js';
 
 const authRoutes = express.Router();
 
@@ -7,7 +8,7 @@ const authRoutes = express.Router();
 authRoutes.post("/sign-up", signUp);
 
 // define API login
-authRoutes.post("/login", login);
+authRoutes.post("/login", tryCatch(login));
 
 
 // define aPI login facebook

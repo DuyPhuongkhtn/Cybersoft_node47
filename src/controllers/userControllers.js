@@ -2,10 +2,12 @@ import connect from "../../db.js";
 
 import initModels from "../models/init-models.js";
 import sequelize from "../models/connect.js";
-import {Op} from 'sequelize'; // Operator
+import {Op, where} from 'sequelize'; // Operator
+import {PrismaClient} from '@prisma/client';
 
 // tạo object model đại diện cho tất cả model của orm
 const model = initModels(sequelize);
+const prisma = new PrismaClient();
 
 const getUsers = (req, res) => {
     res.status(200).json({message: "get-users"});
@@ -66,15 +68,68 @@ const getUserOrmById = async (req, res) => {
 const createUserOrm = async (req, res) => {
     try {
         let {full_name, email} = req.body;
-        await model.users.create({
-            full_name,
-            email
-        });
+        // await model.users.create({
+        //     full_name,
+        //     email
+        // });
+        await prisma.users.create({
+            data: {
+                full_name,
+                email
+            }
+        })
         return res.status(201).json({message: "Create user successfully"})
     } catch (error) {
         console.log(error)
         return res.status(500).json({message: "error API create user orm"});
     }
+}
+
+const updateUser = async (req, res) => {
+    let {full_name, avatar, pass_word, email} = req.body;
+    // check user có tồn tại trong db hay không
+    let checkUser = await prisma.users.findFirst({
+        where: {email}
+    });
+    if (!checkUser) {
+        return res.status(400).json({message: "Email is wrong"});
+    }
+    await prisma.users.update(
+        {
+            data: {
+                full_name,
+                avatar,
+                pass_word
+            },
+            where: {
+                email
+            }
+        }
+    )
+
+    return res.status(200).json({message: "Update user successfully"});
+}
+
+const deleteUser = async (req, res) => {
+    let {user_id} = req.params;
+
+    let checkUser = await prisma.users.findFirst({
+        where: {user_id: Number(user_id)}
+    })
+
+    if (!checkUser) {
+        return res.status(400).json({message: "User not found"});
+    }
+    await prisma.users.delete({
+        where: {user_id: Number(user_id)}
+    });
+
+    // on delete cascade trong table có chứa khóa ngoại
+    // video_like
+    // user_id INT,
+    // foreign key(user_id) reference users(user_id) on delete cascade
+
+    return res.status(200).json({message: "Delete user successfully"});
 }
 
 export {
@@ -83,5 +138,7 @@ export {
     getUserDb,
     getUserOrm,
     getUserOrmById,
-    createUserOrm
+    createUserOrm,
+    updateUser,
+    deleteUser
 }

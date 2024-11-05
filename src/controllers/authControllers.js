@@ -62,58 +62,54 @@ const signUp = async (req, res) => {
 };
 
 const login = async (req, res) => {
-    try {
-        // lấy email và pass_word từ body req
-        let { email, pass_word } = req.body;
+    // lấy email và pass_word từ body req
+    let { email, pass_word } = req.body;
 
-        // kiểm tra email có tồn tại trong db hay ko
-        // nếu ko có email => return error
-        let checkUser = await model.users.findOne(({
-            where: { email }
-        }));
-        if (!checkUser) {
-            return res.status(400).json({ message: "Email is wrong" });
-        }
-
-        // nếu tồn tại => check password
-        // param 1: password chưa mã hóa
-        // param 2: password đã mã hóa
-        let checkPass = bcrypt.compareSync(pass_word, checkUser.pass_word);
-        if (!checkPass) {
-            return res.status(400).json({ message: "Password is wrong" });
-        }
-
-        // dùng lib jsonwebtoken để tạo token
-
-        // tạo payload để lưu vào access token
-        let payload = {
-            userId: checkUser.user_id
-        }
-
-        // tạo access token bằng khóa đối xứng
-        let accessToken = createToken(payload);
-
-        // tạo refresh token
-        let refreshToken = createRefToken(payload);
-
-        // lưu refresh token vào table users
-        await model.users.update({
-            refresh_token: refreshToken
-        }, { where: {user_id: checkUser.user_id}})
-
-        // gắn refresh token cho cookie của response
-        res.cookie('refreshToken', refreshToken, {
-            httpOnly: true,
-            secure: false, // dùng riêng cho localhost
-            sameSite: 'Lax', // đảm bảo cookie được gửi trong nhiều domain
-            maxAge: 7 * 24 * 60 * 60 * 1000 // thời gian tồn tại là 7 ngày
-        })
-
-        return res.status(200).json({ message: "Login successfully", token: accessToken });
-        // access token + refresh token
-    } catch (error) {
-        return res.status(500).json({ message: "error API login" });
+    // kiểm tra email có tồn tại trong db hay ko
+    // nếu ko có email => return error
+    let checkUser = await model.users.findOne(({
+        where: { email }
+    }));
+    if (!checkUser) {
+        return res.status(400).json({ message: "Email is wrong" });
     }
+
+    // nếu tồn tại => check password
+    // param 1: password chưa mã hóa
+    // param 2: password đã mã hóa
+    let checkPass = bcrypt.compareSync(pass_word, checkUser.pass_word);
+    if (!checkPass) {
+        return res.status(400).json({ message: "Password is wrong" });
+    }
+
+    // dùng lib jsonwebtoken để tạo token
+
+    // tạo payload để lưu vào access token
+    let payload = {
+        userId: checkUser.user_id
+    }
+
+    // tạo access token bằng khóa đối xứng
+    let accessToken = createToken(payload);
+
+    // tạo refresh token
+    let refreshToken = createRefToken(payload);
+
+    // lưu refresh token vào table users
+    await model.users.update({
+        refresh_token: refreshToken
+    }, { where: { user_id: checkUser.user_id } })
+
+    // gắn refresh token cho cookie của response
+    res.cookie('refreshToken', refreshToken, {
+        httpOnly: true,
+        secure: false, // dùng riêng cho localhost
+        sameSite: 'Lax', // đảm bảo cookie được gửi trong nhiều domain
+        maxAge: 7 * 24 * 60 * 60 * 1000 // thời gian tồn tại là 7 ngày
+    })
+
+    return res.status(200).json({ message: "Login successfully", token: accessToken });
+    // access token + refresh token
 }
 
 const loginFacebook = async (req, res) => {
@@ -227,27 +223,27 @@ const forgotPassword = async (req, res) => {
 
 const changePassword = async (req, res) => {
     try {
-        let {email, code, newPass} = req.body;
+        let { email, code, newPass } = req.body;
 
         // check email có tồn tại trong db hay không
         let checkEmail = await model.users.findOne({
-            where: {email}
+            where: { email }
         });
 
         if (!checkEmail) {
-            return res.status(400).json({message: "Email is wrong"});
+            return res.status(400).json({ message: "Email is wrong" });
         }
 
-        if(!code) {
-            return res.status(400).json({message: "Code is wrong"});
+        if (!code) {
+            return res.status(400).json({ message: "Code is wrong" });
         }
 
         let checkCode = await model.code.findOne({
-            where: {code}
+            where: { code }
         })
 
         if (!checkCode) {
-            return res.status(400).json({message: "Code is wrong"});
+            return res.status(400).json({ message: "Code is wrong" });
         }
 
         let hashNewPass = bcrypt.hashSync(newPass, 10);
@@ -259,11 +255,11 @@ const changePassword = async (req, res) => {
 
         // hủy code sau khi đã change password
         await model.code.destroy({
-            where: {code}
+            where: { code }
         })
-        return res.status(200).json({message: "Change password successfully"});
+        return res.status(200).json({ message: "Change password successfully" });
     } catch (error) {
-        return res.status(500).json({message: "error API change password"});
+        return res.status(500).json({ message: "error API change password" });
     }
 }
 
@@ -275,23 +271,23 @@ const extendToken = async (req, res) => {
 
         if (!refreshToken) {
             console.log("nothing")
-            return res.status(401).json({message: "401"})
+            return res.status(401).json({ message: "401" })
         }
 
         // check refresh token trong db
         let userRefToken = await model.users.findOne({
-            where: {refresh_token: refreshToken}
+            where: { refresh_token: refreshToken }
         });
 
         if (!userRefToken || userRefToken == null) {
-            return res.status(401).json({message: "401"})
+            return res.status(401).json({ message: "401" })
         }
 
         //  create new access token
-        let newAccessToken = createToken({userId: userRefToken.user_id});
-        return res.status(200).json({message: "Success", token: newAccessToken});
+        let newAccessToken = createToken({ userId: userRefToken.user_id });
+        return res.status(200).json({ message: "Success", token: newAccessToken });
     } catch (error) {
-        return res.status(500).json({message: "Error API extend token"});
+        return res.status(500).json({ message: "Error API extend token" });
     }
 }
 
