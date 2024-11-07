@@ -39,20 +39,20 @@ app.get("/hello-world", (req, res) => {
 
 });
 
-app.get("/health-check", (req, res)=>{
+app.get("/health-check", (req, res) => {
     res.send("Server is normally")
 });
 
 // lấy thông tin data từ params, query string, headers, body
 // http://localhost:8080/get-user/1
 // define API get-user
-app.get("/get-user/:id/:hoTen", (req, res)=>{
+app.get("/get-user/:id/:hoTen", (req, res) => {
     // lấy id từ URL
-    let {id, hoTen} = req.params;
-    let {queryString} = req.query;
-    let {token, authorization} = req.headers;
+    let { id, hoTen } = req.params;
+    let { queryString } = req.query;
+    let { token, authorization } = req.headers;
     let headers = req.headers
-    res.send({id, hoTen, queryString, token, authorization });
+    res.send({ id, hoTen, queryString, token, authorization });
 });
 
 // lấy body từ API POST (create) và PUT (update)
@@ -92,3 +92,80 @@ app.listen(8080, () => {
 // B1.1: sửa lại info connection string
 // B2: npx prisma db pull (db first)
 // b3: npx prisma generate (khởi tạo client) <==> connect trong sequelize
+
+
+
+
+// yarn add swagger-ui-express swagger-jsdoc
+import swaggerUi from 'swagger-ui-express'
+import swaggerJSDoc from 'swagger-jsdoc';
+
+const option = {
+    definition: {
+        openapi: '3.0.0',
+        info: {
+            title: 'Swagger nodejs 47',
+            version: '1.0.1',
+            description: 'mô tả swagger'
+        },
+        servers: [
+            {
+                url: 'http://localhost:8080',
+                description: 'mô tả thông tin server'
+            }
+        ]
+    },
+    apis: ["src/routes/*.js"]
+}
+const specs = swaggerJSDoc(option)
+app.use("/swagger", swaggerUi.serve, swaggerUi.setup(specs))
+
+
+
+
+
+
+import { createServer } from "http"; // server có sẵn khi cài nodejs
+import { Server } from "socket.io";
+
+const httpServer = createServer(app);
+
+// đối tượng socket server
+const io = new Server(httpServer, {
+    cors: {
+        origin: "*"
+    }
+});
+let number = 0
+
+io.on("connection", (socket) => {
+    // đối tượng socket client
+    // console.log(socket.id)
+
+    io.emit("send-data", socket.id) // gửi data đến tất cả client đang kết nối
+
+    // dùng on thì gọi socket
+    // dùng emit thì gọi io
+    socket.on("client-send", () => {
+        io.emit("send-number", number++)
+
+    })
+
+    socket.on("client-chat", (mess) => {
+        // lưu database
+
+        io.to("room-3").emit("send-chat", mess)
+
+    })
+
+    socket.on("join-room", () => {
+        socket.join("room-1")
+        socket.join("room-2")
+        socket.join("room-3")
+
+        console.log(socket.id + " đã vào room-1")
+        
+    })
+});
+
+httpServer.listen(8081);

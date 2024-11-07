@@ -6,6 +6,17 @@ import { tryCatch } from '../config/tryCatch.js';
 const videoRoutes = express.Router();
 
 // define API get list videos
+
+/**
+* @swagger
+* /video/get-video:
+*  post:
+*       description: responses
+*       tags: [Video]
+*       responses:
+*           200:
+*               description: success
+*/
 videoRoutes.get("/get-videos",getVideos);
 
 
@@ -16,6 +27,20 @@ videoRoutes.get("/get-types", tryCatch(getTypes)); // apply authentication
 videoRoutes.get("/get-videos/:typeId", getVideosTypeId);
 
 // define api get video detail
+
+/**
+* @swagger
+* /video/get-video/{id}:
+*   get:
+*       description: responses
+*       tags: [User]
+*       parameters:
+*       - in: path
+*         name: id
+*       responses:
+*             200:
+*                description: res
+*/
 videoRoutes.get("/get-video/:videoId", getVideoById);
 
 export default videoRoutes;
