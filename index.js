@@ -127,6 +127,7 @@ app.use("/swagger", swaggerUi.serve, swaggerUi.setup(specs))
 
 import { createServer } from "http"; // server có sẵn khi cài nodejs
 import { Server } from "socket.io";
+import { PrismaClient } from '@prisma/client';
 
 const httpServer = createServer(app);
 
@@ -138,34 +139,77 @@ const io = new Server(httpServer, {
 });
 let number = 0
 
+const prisma = new PrismaClient()
+
 io.on("connection", (socket) => {
+
+    // chat app
+
+
+    socket.on("client-chat", async (data) => {
+        // lưu database
+        let model = {
+            user_id: Number(data.user_id),
+            content: data.content,
+            room_id: data.roomId,
+            date: new Date()
+        }
+
+        await prisma.chat.create({ data: model })
+
+
+        io.to(data.roomId).emit("send-chat", data)
+
+    })
+
+    socket.on("join-room", async (roomId) => {
+        socket.rooms.forEach(roomId => socket.leave(roomId))
+
+        socket.join(roomId) // rooms => join theo list room
+
+        let dataChat = await prisma.chat.findMany({
+            where: {
+                room_id: roomId
+            }
+        })
+
+        io.to(roomId).emit("send-db-chat", dataChat)
+
+
+    })
+
+
+
+
+
+
     // đối tượng socket client
     // console.log(socket.id)
 
-    io.emit("send-data", socket.id) // gửi data đến tất cả client đang kết nối
+    // io.emit("send-data", socket.id) // gửi data đến tất cả client đang kết nối
 
-    // dùng on thì gọi socket
-    // dùng emit thì gọi io
-    socket.on("client-send", () => {
-        io.emit("send-number", number++)
+    // // dùng on thì gọi socket
+    // // dùng emit thì gọi io
+    // socket.on("client-send", () => {
+    //     io.emit("send-number", number++)
 
-    })
+    // })
 
-    socket.on("client-chat", (mess) => {
-        // lưu database
+    // socket.on("client-chat", (mess) => {
+    //     // lưu database
 
-        io.to("room-3").emit("send-chat", mess)
+    //     io.to("room-3").emit("send-chat", mess)
 
-    })
+    // })
 
-    socket.on("join-room", () => {
-        socket.join("room-1")
-        socket.join("room-2")
-        socket.join("room-3")
+    // socket.on("join-room", () => {
+    //     socket.join("room-1")
+    //     socket.join("room-2")
+    //     socket.join("room-3")
 
-        console.log(socket.id + " đã vào room-1")
-        
-    })
+    //     console.log(socket.id + " đã vào room-1")
+
+    // })
 });
 
 httpServer.listen(8081);

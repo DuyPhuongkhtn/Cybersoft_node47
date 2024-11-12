@@ -38,7 +38,7 @@ const Socket = () => {
       </button>
 
       <button onClick={() => {
-        socket.emit("join-room", "")``
+        socket.emit("join-room", "")
       }}>
         Vào room
       </button>
