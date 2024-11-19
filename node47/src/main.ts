@@ -16,6 +16,7 @@ async function bootstrap() {
   .setVersion("1.0")
   .build(); // builder pattern
 
+
   const swagger = SwaggerModule.createDocument(app, configSwagger);
   SwaggerModule.setup("swagger", app, swagger);
 
