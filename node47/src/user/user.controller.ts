@@ -4,10 +4,14 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { Request } from 'express';
 import { ApiHeader, ApiQuery } from '@nestjs/swagger';
+import {ConfigService} from '@nestjs/config';
 
 @Controller('user')
 export class UserController {
-  constructor(private readonly userService: UserService) {}
+  constructor(
+    private readonly userService: UserService,
+    private readonly configService: ConfigService
+  ) {}
 
   @Post()
   create(@Body() createUserDto: CreateUserDto) {
@@ -34,6 +38,11 @@ export class UserController {
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.userService.findOne(+id);
+  }
+
+  @Get('/env/get-env')
+  getEnv(){
+    return this.configService.get<number>("PORT");
   }
 
   @Patch(':id')

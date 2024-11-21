@@ -25,3 +25,15 @@ export class CreateVideoDto {
     @ApiProperty()
     type_id: number;
 }
+
+// DTO cho upload 1 hình ảnh
+export class FileUploadDto {
+    @ApiProperty({type: 'string', format:'binary'})
+    hinhAnh: any;
+}
+
+// DTO cho upload nhiều hình ảnh
+export class FilesUploadDto {
+    @ApiProperty({type: 'array', items: {type: 'string', format: 'binary'}})
+    hinhAnhs: any[];
+}

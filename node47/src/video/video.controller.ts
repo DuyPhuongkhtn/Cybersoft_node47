@@ -1,15 +1,21 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query, Res, HttpStatus } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Query, Res, HttpStatus, UseInterceptors, UploadedFile, UploadedFiles } from '@nestjs/common';
 import { VideoService } from './video.service';
-import { CreateVideoDto } from './dto/create-video.dto';
+import { CreateVideoDto, FilesUploadDto, FileUploadDto } from './dto/create-video.dto';
 import { UpdateVideoDto } from './dto/update-video.dto';
 import { Response } from 'express';
-import { ApiQuery } from '@nestjs/swagger';
+import { ApiBody, ApiConsumes, ApiQuery } from '@nestjs/swagger';
 import { VideoDto } from './dto/video.dto';
 import { ListVideoDto } from './dto/list-video.dto';
+import { FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
+import { storage } from 'src/shared/upload.service';
+import { CloudinaryUploadService } from 'src/shared/cloud-upload.service';
 
 @Controller('video')
 export class VideoController {
-  constructor(private readonly videoService: VideoService) {}
+  constructor(
+    private readonly videoService: VideoService,
+    private readonly cloudinaryService: CloudinaryUploadService
+  ) {}
 
   @Post()
   async create(
@@ -47,6 +53,56 @@ export class VideoController {
     //   page:1,
     //   size: 10
     // ]
+  }
+
+  @Post('/upload-thumbnail')
+  @ApiConsumes('multipart/form-data') // define kiểu dữ liệu gửi lên trên swagger
+  @ApiBody({
+    type: FileUploadDto,
+    required: true
+  }) // define body trên swagger
+  @UseInterceptors(FileInterceptor('hinhAnh', {storage: storage('video')}))
+  uploadThumbnail(
+    @UploadedFile() file: Express.Multer.File,
+    @Res() res: Response
+  ): any {
+    return res.status(HttpStatus.OK).json(file);
+  }
+
+  // define API upload single cloud
+  @Post('/upload-thumbnail-cloud')
+  @ApiConsumes('multipart/form-data') // define kiểu dữ liệu gửi lên trên swagger
+  @ApiBody({
+    type: FileUploadDto,
+    required: true
+  }) // define body trên swagger
+  @UseInterceptors(FileInterceptor('hinhAnh'))
+  async uploadThumbnailCloud(
+    @UploadedFile() file: Express.Multer.File,
+    @Res() res: Response
+  ): Promise<any> {
+    try {
+      const result = await this.cloudinaryService.uploadImage(file, 'video');
+      return res.status(HttpStatus.OK).json(result);
+    } catch (error) {
+      console.log(error);
+      return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({message: 'Upload failed'});
+    }
+  }
+
+  // define API upload multiple images
+  @Post('/upload-multiple-thumbnail')
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    type: FilesUploadDto,
+    required: true
+  })
+  @UseInterceptors(FilesInterceptor('hinhAnhs', 3, {storage: storage('video')}))
+  uploadMultipleThumbnail(
+    @UploadedFiles() files: Express.Multer.File[],
+    @Res() res: Response
+  ): any{
+    return res.status(HttpStatus.OK).json(files);
   }
 
   @Get(':id')
