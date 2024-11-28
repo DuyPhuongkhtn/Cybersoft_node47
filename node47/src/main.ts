@@ -16,6 +16,7 @@ async function bootstrap() {
   .setTitle("API Youtube mini")
   .setDescription("Danh sách API youtube mini")
   .setVersion("1.0")
+  .addBearerAuth()
   .build(); // builder pattern
 
 

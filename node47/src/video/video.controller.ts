@@ -1,20 +1,24 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query, Res, HttpStatus, UseInterceptors, UploadedFile, UploadedFiles } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Query, Res, HttpStatus, UseInterceptors, UploadedFile, UploadedFiles, UseGuards } from '@nestjs/common';
 import { VideoService } from './video.service';
 import { CreateVideoDto, FilesUploadDto, FileUploadDto } from './dto/create-video.dto';
 import { UpdateVideoDto } from './dto/update-video.dto';
 import { Response } from 'express';
-import { ApiBody, ApiConsumes, ApiQuery } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiBody, ApiConsumes, ApiQuery } from '@nestjs/swagger';
 import { VideoDto } from './dto/video.dto';
 import { ListVideoDto } from './dto/list-video.dto';
 import { FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
 import { storage } from 'src/shared/upload.service';
 import { CloudinaryUploadService } from 'src/shared/cloud-upload.service';
+import { EmailService } from 'src/email/email.service';
+import { EmailDto } from './dto/email.dto';
+import { AuthGuard } from '@nestjs/passport';
 
 @Controller('video')
 export class VideoController {
   constructor(
     private readonly videoService: VideoService,
-    private readonly cloudinaryService: CloudinaryUploadService
+    private readonly cloudinaryService: CloudinaryUploadService,
+    private readonly emailService: EmailService
   ) {}
 
   @Post()
@@ -26,6 +30,8 @@ export class VideoController {
     return res.status(HttpStatus.CREATED).json(newVideo);
   }
   // page, size, keyword <= query
+  @ApiBearerAuth()// define cho swagger để import token vào header của API
+  @UseGuards(AuthGuard('jwt')) // thêm middleware authentication cho API (NestJS) và thêm trước decorator method
   @Get()
   @ApiQuery({name: 'page', required: false, type: Number})
   @ApiQuery({name: 'size', required: false, type: Number})
@@ -118,5 +124,27 @@ export class VideoController {
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.videoService.remove(+id);
+  }
+
+  // define API send email
+  @Post('/send-email')
+  @ApiBody({
+    type: EmailDto,
+  })
+  async sendEmail(
+    @Body() body: EmailDto,
+    @Res() res: Response
+  ): Promise<any>{
+    try {
+      // lấy info {emailTo, subject, text} từ body
+      const {emailTo, subject, text} = body;
+      // gọi service send email
+      await  this.emailService.sendEmail(emailTo, subject, text);
+      return res.status(HttpStatus.OK).json({message: 'Send email successfully'});
+
+    } catch (error) {
+      console.log(error);
+      return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({message: 'Send email failed'});
+    }
   }
 }
